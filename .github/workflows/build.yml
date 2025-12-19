@@ -1,0 +1,131 @@
+name: Build palen1x
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ x86_64, x86, aarch64, armv7 ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from GitHub API
+        id: version
+        run: |
+          download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+          echo "VERSION=$download_version" >> $GITHUB_ENV
+          echo "VERSION=$download_version"
+
+      - name: Install qemu-user-static
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Build
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          sudo -E ./build.sh
+
+      - name: Prepare artifact
+        run: |
+          mkdir palen1x
+          cp work/*.iso palen1x
+          cp work/iso/boot/initramfs.xz palen1x/initramfs-${{ matrix.arch }}.xz
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: palen1x-${{ matrix.arch }}
+          path: palen1x/
+
+  upload-to-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from GitHub API
+        run: |
+          download_version=$(curl -s https://api.github.com/repos/palera1n/palera1n/releases | grep -m 1 -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+          echo "VERSION=$download_version" >> $GITHUB_ENV
+          echo "VERSION=$download_version"
+
+      - name: Create release
+        id: create_release
+        uses: actions/github-script@v6
+        env:
+          VERSION: ${{ env.VERSION }}
+        with:
+          script: |
+            try {
+              const { data } = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: `${process.env.VERSION}`,
+                name: `Release ${process.env.VERSION}`,
+                draft: false,
+                prerelease: false
+              });
+              console.log('Release created:', data.html_url);
+              console.log('Upload URL from API:', data.upload_url);
+              
+              // Store the upload URL directly (it should already be in correct format)
+              core.setOutput('upload_url', data.upload_url);
+            } catch (error) {
+              if (error.status === 422 && error.message.includes('already_exists')) {
+                console.log('Release already exists, getting existing release...');
+                // Get existing release
+                const { data } = await github.rest.repos.getReleaseByTag({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag: `${process.env.VERSION}`
+                });
+                console.log('Using existing release:', data.html_url);
+                core.setOutput('upload_url', data.upload_url);
+              } else {
+                console.error('Error creating release:', error.message);
+                console.error('Error status:', error.status);
+                throw error;
+              }
+            }
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload release assets (ISO)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: |
+            artifacts/palen1x-x86_64/palen1x-x86_64-${{ env.VERSION }}.iso
+            artifacts/palen1x-x86/palen1x-x86-${{ env.VERSION }}.iso
+            artifacts/palen1x-aarch64/palen1x-aarch64-${{ env.VERSION }}.iso
+            artifacts/palen1x-armv7/palen1x-armv7-${{ env.VERSION }}.iso
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
+
+      - name: Upload release assets (initramfs)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: |
+            artifacts/palen1x-x86_64/initramfs-x86_64.xz
+            artifacts/palen1x-x86/initramfs-x86.xz
+            artifacts/palen1x-aarch64/initramfs-aarch64.xz
+            artifacts/palen1x-armv7/initramfs-armv7.xz
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
