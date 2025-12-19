@@ -145,7 +145,7 @@ chmod +x rootfs/usr/sbin/usbmuxd
 chmod -v 755 ../inittab
 chmod -v 755 ../scripts/*
 cp -av ../inittab rootfs/etc
-cp -v ../scripts/* rootfs/usr/bin
+cp -av ../scripts/* rootfs/usr/bin
 chmod -v 755 rootfs/usr/local/bin/*
 ln -sv sbin/init rootfs/init
 ln -sv ../../etc/terminfo rootfs/usr/share/terminfo # fix ncurses
