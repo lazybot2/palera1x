@@ -33,7 +33,7 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
         run: |
-          sudo -E ./build.sh
+          sudo -E bash ./build.sh
 
       - name: Prepare artifact
         run: |
