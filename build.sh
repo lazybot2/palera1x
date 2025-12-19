@@ -142,6 +142,8 @@ chmod +x rootfs/usr/bin/palera1n
 curl -Lo rootfs/usr/sbin/usbmuxd "$USBMUXD"
 chmod +x rootfs/usr/sbin/usbmuxd
 
+chmod -v 755 ../inittab
+chmod -v 755 ../scripts/*
 cp -av ../inittab rootfs/etc
 cp -v ../scripts/* rootfs/usr/bin
 chmod -v 755 rootfs/usr/local/bin/*
