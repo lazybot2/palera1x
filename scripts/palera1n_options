@@ -45,6 +45,26 @@ if [ "$jbtype" = "Rootless" ]; then
   else
       echo "Cancelled"
   fi
+elif [ "$jbtype" = "RootHide" ]; then
+  OPTIONS="$(whiptail --separate-output --nocancel --ok-button "Select" --title "palera1n options" --checklist \
+  "Press spacebar to select option, and enter to complete" 15 54 5 \
+  "1" "Verbose" ON \
+  "2" "Serial" OFF \
+  "3" "Debug" OFF 3>&1 1>&2 2>&3)"
+  if [ $? = 0 ]; then
+      output=""
+      for OPTION in $OPTIONS; do
+          case $OPTION in
+              "1") output1="-V";;
+              "2") output2="-e 'serial=3'";;
+              "3") output3="-v";;
+          esac
+      done
+      echo "-l -k /roothide/Pongo.bin -K /roothide/checkra1n-kpf-pongo -o /roothide/jbinit $output1 $output2 $output3" > /usr/bin/.args
+      /usr/bin/palera1n_menu
+  else
+      echo "Cancelled"
+  fi
 elif [ "$jbtype" = "Rootful" ]; then
   OPTIONS="$(whiptail --separate-output --nocancel --ok-button "Select" --title "palera1n options" --checklist \
   "Press spacebar to select option, and enter to complete" 15 54 5 \

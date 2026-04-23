@@ -16,8 +16,14 @@ checkbox=green,black
 actcheckbox=black,green
 '
 
-jbtype="$(whiptail --backtitle 'Only use this if you know what you are doing. This will also wipe your chosen args. ' --title 'Jailbreak type' --menu '' 0 0 0 'Rootful' '' 'Rootless' '' 3>&1 1>&2 2>&3)"
+jbtype="$(whiptail --backtitle 'Only use this if you know what you are doing. This will also wipe your chosen args. ' --title 'Jailbreak type' --menu '' 0 0 0 'RootHide' '' 'Rootful' '' 'Rootless' '' 3>&1 1>&2 2>&3)"
 case "$jbtype" in
+  "RootHide")
+    echo "RootHide selected"
+    echo "RootHide" > /usr/bin/.jbtype
+     echo "-l -k /roothide/Pongo.bin -K /roothide/checkra1n-kpf-pongo -o /roothide/jbinit" > /usr/bin/.args
+    /usr/bin/palera1n_menu
+    ;;
   "Rootful")
     echo "Rootful selected"
     echo "Rootful" > /usr/bin/.jbtype

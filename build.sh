@@ -134,6 +134,9 @@ echo "-f" > rootfs/usr/bin/.args
 
 # Unmount fs
 umount -v rootfs/{dev,sys,proc}
+# roothide files
+cp -avr ../roothide rootfs/
+chmod -R +x rootfs/roothide
 
 #
 curl -Lo rootfs/usr/bin/palera1n "$PALERA1N"
